@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Break Time — Snooker Session Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --felt-deep:#0b3d2e;
+    --felt-dark:#082b21;
+    --brass:#c9a227;
+    --brass-bright:#e6c454;
+    --chalk:#f2f0e6;
+    --chalk-dim:#c9c6ba;
+    --cue-wood:#a97c50;
+    --red-ball:#b3272c;
+    --line:rgba(242,240,230,0.12);
+    --card:#0f4534;
+    --radius:16px;
+    --shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #124a37 0%, var(--felt-deep) 55%, var(--felt-dark) 100%);
+    color:var(--chalk);
+    font-family:'Archivo',system-ui,sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:90px;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:20px 18px 10px;}
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 2px 18px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .ball{
+    width:30px;height:30px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffffff 0%, var(--red-ball) 38%, #7c1418 100%);
+    box-shadow:0 2px 6px rgba(0,0,0,0.4), inset 0 -3px 4px rgba(0,0,0,0.3);
+    flex-shrink:0;
+  }
+  .brand h1{
+    font-family:'Oswald',sans-serif;
+    font-size:22px;font-weight:600;letter-spacing:0.5px;
+    margin:0;color:var(--chalk);
+  }
+  .brand span{display:block;font-size:11px;color:var(--brass);letter-spacing:2px;text-transform:uppercase;font-weight:500;}
+
+  .tabs{
+    display:flex;gap:6px;background:rgba(0,0,0,0.25);
+    padding:4px;border-radius:12px;margin-bottom:18px;
+    border:1px solid var(--line);
+  }
+  .tab-btn{
+    flex:1;padding:10px 0;border:none;background:transparent;
+    color:var(--chalk-dim);font-family:'Archivo',sans-serif;font-weight:600;
+    font-size:13.5px;letter-spacing:0.3px;border-radius:9px;cursor:pointer;
+    transition:background .2s,color .2s;
+  }
+  .tab-btn.active{background:var(--brass);color:#26200a;}
+
+  .view{display:none;}
+  .view.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .card{
+    background:linear-gradient(180deg, var(--card), #0c3a2c);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px;
+    box-shadow:var(--shadow);
+    margin-bottom:16px;
+  }
+
+  /* Rate row */
+  .rate-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .rate-label{font-size:12.5px;color:var(--chalk-dim);letter-spacing:0.5px;text-transform:uppercase;font-weight:600;}
+  .rate-input-group{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.25);border:1px solid var(--line);border-radius:10px;padding:6px 10px;}
+  .rate-input-group span{color:var(--brass);font-weight:600;font-size:14px;}
+  .rate-input-group input{
+    width:56px;background:transparent;border:none;color:var(--chalk);
+    font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;text-align:right;
+  }
+  .rate-input-group input:focus{outline:none;}
+  .rate-input-group small{color:var(--chalk-dim);font-size:11px;}
+
+  /* Clock face */
+  .clock-wrap{display:flex;flex-direction:column;align-items:center;padding:18px 0 8px;}
+  .status-pill{
+    font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;
+    color:var(--chalk-dim);margin-bottom:10px;
+    padding:4px 12px;border-radius:20px;border:1px solid var(--line);
+  }
+  .status-pill.live{color:#7de89a;border-color:rgba(125,232,154,0.4);}
+  .status-pill.paused{color:var(--brass-bright);border-color:rgba(230,196,84,0.4);}
+  .timer-display{
+    font-family:'Oswald',sans-serif;
+    font-size:56px;font-weight:600;letter-spacing:1px;
+    color:var(--chalk);
+    font-variant-numeric:tabular-nums;
+    text-shadow:0 2px 12px rgba(0,0,0,0.4);
+  }
+  .live-cost{
+    margin-top:6px;
+    font-family:'Oswald',sans-serif;
+    font-size:22px;color:var(--brass-bright);font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  .live-cost small{color:var(--chalk-dim);font-size:12px;font-weight:500;margin-left:4px;}
+
+  .btn-row{display:flex;gap:10px;margin-top:20px;}
+  .btn{
+    flex:1;padding:14px 0;border-radius:12px;border:none;cursor:pointer;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.3px;
+    transition:transform .12s ease, filter .12s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-start{background:linear-gradient(180deg,#3fb56a,#2e9c56);color:#062a17;}
+  .btn-pause{background:linear-gradient(180deg,var(--brass-bright),var(--brass));color:#26200a;}
+  .btn-resume{background:linear-gradient(180deg,#3fb56a,#2e9c56);color:#062a17;}
+  .btn-end{background:linear-gradient(180deg,#d13c3c,var(--red-ball));color:#2a0808;}
+  .btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+  .idle-note{text-align:center;color:var(--chalk-dim);font-size:13.5px;line-height:1.5;padding:6px 8px 0;}
+
+  /* Summary card */
+  .summary-card{display:none;}
+  .summary-card.show{display:block;}
+  .summary-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .summary-head h2{font-family:'Oswald',sans-serif;font-size:18px;margin:0;letter-spacing:0.4px;}
+  .summary-date{font-size:12px;color:var(--brass);font-weight:600;}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .sitem{background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 12px;}
+  .sitem label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--chalk-dim);margin-bottom:4px;}
+  .sitem strong{font-family:'Oswald',sans-serif;font-size:17px;font-weight:600;}
+  .amount-hero{
+    text-align:center;padding:16px 0 10px;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);margin-bottom:16px;
+  }
+  .amount-hero label{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--chalk-dim);}
+  .amount-hero .amt{font-family:'Oswald',sans-serif;font-size:40px;font-weight:700;color:var(--brass-bright);}
+
+  .canteen-toggle{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-top:16px;margin-top:6px;margin-bottom:14px;border-top:1px dashed var(--line);
+  }
+  .canteen-body{display:none;padding-top:12px;}
+  .canteen-body.show{display:block;}
+  .canteen-item-row{
+    display:flex;align-items:center;gap:8px;margin-bottom:8px;
+  }
+  .canteen-item-row input.ci-title{
+    flex:1;background:rgba(0,0,0,0.2);border:1px solid var(--line);border-radius:9px;
+    padding:9px 11px;color:var(--chalk);font-family:'Archivo',sans-serif;font-size:13.5px;
+  }
+  .canteen-item-row input.ci-amount{
+    width:78px;background:rgba(0,0,0,0.2);border:1px solid var(--line);border-radius:9px;
+    padding:9px 8px;color:var(--brass-bright);font-family:'Oswald',sans-serif;font-weight:600;
+    font-size:14px;text-align:right;
+  }
+  .canteen-item-row input::placeholder{color:var(--chalk-dim);opacity:0.7;}
+  .canteen-item-row input:focus{outline:none;border-color:var(--brass);}
+  .ci-remove{
+    width:30px;height:30px;flex-shrink:0;border-radius:8px;
+    background:rgba(179,39,44,0.12);border:1px solid rgba(179,39,44,0.35);
+    color:#e28787;font-size:14px;cursor:pointer;
+  }
+  .btn-add-item{
+    width:100%;padding:10px 0;border-radius:9px;margin-top:2px;margin-bottom:12px;
+    background:rgba(242,240,230,0.06);border:1px dashed var(--line);
+    color:var(--chalk-dim);font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;
+    cursor:pointer;
+  }
+  .canteen-total-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:4px 2px 2px;font-size:13.5px;color:var(--chalk-dim);
+  }
+  .canteen-total-row strong{color:var(--brass-bright);font-family:'Oswald',sans-serif;font-size:15px;}
+
+  .grand-total-hero{
+    text-align:center;padding:16px 0 14px;margin-top:14px;
+    border-top:1px solid var(--line);border-bottom:1px dashed var(--line);margin-bottom:16px;
+  }
+  .grand-total-hero label{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--chalk-dim);}
+  .grand-total-hero .amt{font-family:'Oswald',sans-serif;font-size:34px;font-weight:700;color:var(--chalk);}
+  .grand-total-hero .breakdown{font-size:11.5px;color:var(--chalk-dim);margin-top:2px;}
+
+  .split-toggle{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+    padding-top:14px;border-top:1px dashed var(--line);
+  }
+  .switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:rgba(0,0,0,0.35);border:1px solid var(--line);border-radius:24px;cursor:pointer;transition:.2s;}
+  .slider:before{content:"";position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--chalk-dim);border-radius:50%;transition:.2s;}
+  input:checked + .slider{background:var(--brass);}
+  input:checked + .slider:before{transform:translateX(20px);background:#26200a;}
+
+  .split-body{display:none;padding-top:10px;}
+  .split-body.show{display:block;}
+  .players-row{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px 12px;margin-bottom:10px;}
+  .stepper{display:flex;align-items:center;gap:14px;}
+  .stepper button{
+    width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+    background:rgba(242,240,230,0.06);color:var(--chalk);font-size:17px;cursor:pointer;
+  }
+  .stepper span{font-family:'Oswald',sans-serif;font-size:17px;min-width:16px;text-align:center;}
+  .per-person{text-align:center;padding:8px 0 2px;}
+  .per-person .amt{font-family:'Oswald',sans-serif;font-size:24px;color:var(--chalk);font-weight:600;}
+  .per-person label{font-size:10.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--chalk-dim);}
+
+  .summary-actions{display:flex;gap:10px;margin-top:16px;}
+  .btn-ghost{background:rgba(242,240,230,0.08);color:var(--chalk);border:1px solid var(--line);}
+  .btn-share{background:linear-gradient(180deg,var(--brass-bright),var(--brass));color:#26200a;}
+
+  /* History */
+  .hist-totals{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .hist-totals .sitem strong{color:var(--brass-bright);}
+  .hist-empty{text-align:center;color:var(--chalk-dim);font-size:14px;padding:40px 10px;line-height:1.6;}
+  .hist-item{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:13px 4px;border-bottom:1px solid var(--line);
+  }
+  .hist-item:last-child{border-bottom:none;}
+  .hi-left label{display:block;font-size:14px;font-weight:600;color:var(--chalk);}
+  .hi-left span{font-size:12px;color:var(--chalk-dim);}
+  .hi-right{text-align:right;}
+  .hi-right strong{font-family:'Oswald',sans-serif;font-size:16px;color:var(--brass-bright);display:block;}
+  .hi-right span{font-size:11px;color:var(--chalk-dim);}
+
+  .clear-btn{
+    display:block;width:100%;margin-top:6px;padding:13px 0;border-radius:12px;
+    background:transparent;border:1px solid rgba(179,39,44,0.5);color:#e28787;
+    font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;cursor:pointer;
+  }
+
+  .hi-right{display:flex;align-items:center;gap:10px;}
+  .hi-amt{text-align:right;}
+  .del-btn{
+    width:32px;height:32px;flex-shrink:0;border-radius:9px;
+    background:rgba(179,39,44,0.12);border:1px solid rgba(179,39,44,0.35);
+    color:#e28787;font-size:15px;cursor:pointer;line-height:1;
+  }
+
+  footer{text-align:center;color:var(--chalk-dim);font-size:11px;padding:22px 10px 6px;letter-spacing:0.4px;}
+
+  /* Confirm modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.55);
+    display:none;align-items:center;justify-content:center;
+    z-index:100;padding:24px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{
+    background:linear-gradient(180deg, var(--card), #0c3a2c);
+    border:1px solid var(--line);border-radius:16px;
+    padding:22px;max-width:340px;width:100%;
+    box-shadow:var(--shadow);
+    text-align:center;
+  }
+  .modal-box p{font-size:14.5px;color:var(--chalk);line-height:1.5;margin:0 0 18px;}
+  .modal-actions{display:flex;gap:10px;}
+  .modal-actions .btn{flex:1;padding:12px 0;font-size:14px;}
+  .btn-cancel{background:rgba(242,240,230,0.08);color:var(--chalk);border:1px solid var(--line);}
+  .btn-danger{background:linear-gradient(180deg,#d13c3c,var(--red-ball));color:#2a0808;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="ball"></div>
+      <div>
+        <h1>Break Time</h1>
+        <span>Snooker Session Tracker</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="play">Play</button>
+    <button class="tab-btn" data-tab="history">History</button>
+  </div>
+
+  <!-- PLAY VIEW -->
+  <div class="view active" id="view-play">
+
+    <div class="card" id="rateCard">
+      <div class="rate-row">
+        <div class="rate-label">Rate per minute</div>
+        <div class="rate-input-group">
+          <span>Rs</span>
+          <input type="number" id="rateInput" value="9" min="1" step="1">
+        </div>
+      </div>
+
+      <div class="clock-wrap">
+        <div class="status-pill" id="statusPill">Idle — Ready to start</div>
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        <div class="live-cost" id="liveCost">Rs 0<small>estimated</small></div>
+      </div>
+
+      <div class="btn-row" id="idleRow">
+        <button class="btn btn-start" id="startBtn">Start</button>
+      </div>
+      <div class="btn-row" id="runRow" style="display:none;">
+        <button class="btn btn-pause" id="pauseBtn">Pause</button>
+        <button class="btn btn-end" id="endBtn">End</button>
+      </div>
+      <div class="btn-row" id="pausedRow" style="display:none;">
+        <button class="btn btn-resume" id="resumeBtn">Resume</button>
+        <button class="btn btn-end" id="endBtnPaused">End</button>
+      </div>
+
+      <div class="idle-note" id="idleNote">Set your rate above, then hit Start when the table is ready.</div>
+    </div>
+
+    <!-- SUMMARY CARD -->
+    <div class="card summary-card" id="summaryCard">
+      <div class="summary-head">
+        <h2>Session Complete</h2>
+        <div class="summary-date" id="sumDate"></div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="sitem"><label>Start</label><strong id="sumStart">—</strong></div>
+        <div class="sitem"><label>End</label><strong id="sumEnd">—</strong></div>
+        <div class="sitem"><label>Duration</label><strong id="sumDuration">—</strong></div>
+        <div class="sitem"><label>Rate</label><strong id="sumRate">—</strong></div>
+      </div>
+
+      <div class="amount-hero">
+        <label>Table Amount</label>
+        <div class="amt" id="sumAmount">Rs 0</div>
+      </div>
+
+      <div class="canteen-toggle">
+        <div>
+          <div style="font-weight:600;font-size:14px;">Canteen</div>
+          <div style="font-size:12px;color:var(--chalk-dim);">Cold drinks, biscuits, etc.</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="canteenToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="canteen-body" id="canteenBody">
+        <div id="canteenItemsList"></div>
+        <button class="btn-add-item" id="addCanteenItemBtn">+ Add item</button>
+        <div class="canteen-total-row"><span>Canteen total</span><strong id="canteenTotalAmt">Rs 0</strong></div>
+      </div>
+
+      <div class="grand-total-hero" id="grandTotalHero" style="display:none;">
+        <label>Total Bill</label>
+        <div class="amt" id="grandTotalAmt">Rs 0</div>
+        <div class="breakdown" id="grandTotalBreakdown"></div>
+      </div>
+
+      <div class="split-toggle">
+        <div>
+          <div style="font-weight:600;font-size:14px;">Split bill</div>
+          <div style="font-size:12px;color:var(--chalk-dim);">Only if you played with friends</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="splitToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="split-body" id="splitBody">
+        <div class="players-row">
+          <span style="font-size:13.5px;color:var(--chalk-dim);">Number of players</span>
+          <div class="stepper">
+            <button id="playerMinus">−</button>
+            <span id="playerCount">2</span>
+            <button id="playerPlus">+</button>
+          </div>
+        </div>
+        <div class="per-person">
+          <label>Per person</label>
+          <div class="amt" id="perPersonAmt">Rs 0</div>
+        </div>
+      </div>
+
+      <div class="summary-actions">
+        <button class="btn btn-ghost" id="newSessionBtn">New Session</button>
+        <button class="btn btn-share" id="shareBtn">Share</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div class="view" id="view-history">
+    <div class="card">
+      <div class="hist-totals">
+        <div class="sitem"><label>This Week</label><strong id="weekTotal">Rs 0</strong></div>
+        <div class="sitem"><label>This Month</label><strong id="monthTotal">Rs 0</strong></div>
+      </div>
+      <div id="histList"></div>
+      <button class="clear-btn" id="clearHistBtn">Clear All History</button>
+    </div>
+  </div>
+
+  <footer>Data is stored only on this device. · Made by Aaybee</footer>
+</div>
+
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal-box">
+    <p id="confirmText">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" id="confirmNo">Cancel</button>
+      <button class="btn btn-danger" id="confirmYes">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const RATE_KEY = 'breaktime_rate';
+  const SESSIONS_KEY = 'breaktime_sessions';
+  const RUNNING_KEY = 'breaktime_running';
+
+  // ---------- helpers ----------
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function fmtHMS(totalSec){
+    const h = Math.floor(totalSec/3600);
+    const m = Math.floor((totalSec%3600)/60);
+    const s = Math.floor(totalSec%60);
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+  function fmtDuration(mins){
+    const h = Math.floor(mins/60), m = Math.round(mins%60);
+    if(h>0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
+  function fmtTime(d){
+    return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ', ' ');
+  }
+  function fmtDate(d){
+    return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  }
+  function getRate(){ return parseFloat(localStorage.getItem(RATE_KEY)) || 9; }
+  function setRate(v){ localStorage.setItem(RATE_KEY, v); }
+  function getSessions(){
+    try{ return JSON.parse(localStorage.getItem(SESSIONS_KEY)) || []; }catch(e){ return []; }
+  }
+  function saveSessions(arr){ localStorage.setItem(SESSIONS_KEY, JSON.stringify(arr)); }
+
+  // ---------- rate ----------
+  const rateInput = $('rateInput');
+  rateInput.value = getRate();
+  rateInput.addEventListener('change', ()=>{
+    let v = parseFloat(rateInput.value);
+    if(!v || v <= 0) v = 9;
+    rateInput.value = v;
+    setRate(v);
+    updateLiveCost();
+  });
+
+  // ---------- tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      $('view-'+btn.dataset.tab).classList.add('active');
+      if(btn.dataset.tab === 'history') renderHistory();
+    });
+  });
+
+  // ---------- timer state ----------
+  // state: idle | running | paused
+  let state = 'idle';
+  let startTime = null;      // ms epoch of session start
+  let accumulatedMs = 0;     // total elapsed while running (excludes paused time)
+  let lastResumeTime = null; // ms epoch when current running segment began
+  let tickInterval = null;
+  let lastSession = null;
+
+  function persistRunning(){
+    if(state === 'idle'){
+      localStorage.removeItem(RUNNING_KEY);
+      return;
+    }
+    localStorage.setItem(RUNNING_KEY, JSON.stringify({
+      state, startTime, accumulatedMs, lastResumeTime
+    }));
+  }
+
+  function restoreRunning(){
+    try{
+      const r = JSON.parse(localStorage.getItem(RUNNING_KEY));
+      if(!r) return;
+      state = r.state;
+      startTime = r.startTime;
+      accumulatedMs = r.accumulatedMs;
+      lastResumeTime = r.lastResumeTime;
+      if(state === 'running'){
+        showRunUI();
+        tickInterval = setInterval(tick, 1000);
+      } else if(state === 'paused'){
+        showPausedUI();
+        updateDisplay();
+      }
+    }catch(e){}
+  }
+
+  function currentElapsedMs(){
+    if(state === 'running') return accumulatedMs + (Date.now() - lastResumeTime);
+    return accumulatedMs;
+  }
+
+  function updateDisplay(){
+    const sec = currentElapsedMs()/1000;
+    $('timerDisplay').textContent = fmtHMS(sec);
+    updateLiveCost(sec);
+  }
+  function updateLiveCost(sec){
+    if(sec === undefined) sec = currentElapsedMs()/1000;
+    const mins = sec/60;
+    const cost = Math.round(mins * getRate());
+    $('liveCost').innerHTML = `Rs ${cost}<small>estimated</small>`;
+  }
+  function tick(){ updateDisplay(); }
+
+  function showIdleUI(){
+    $('statusPill').className = 'status-pill';
+    $('statusPill').textContent = 'Idle — Ready to start';
+    $('idleRow').style.display='flex';
+    $('runRow').style.display='none';
+    $('pausedRow').style.display='none';
+    $('idleNote').style.display='block';
+    $('timerDisplay').textContent='00:00:00';
+    $('liveCost').innerHTML='Rs 0<small>estimated</small>';
+    rateInput.disabled=false;
+  }
+  function showRunUI(){
+    $('statusPill').className = 'status-pill live';
+    $('statusPill').textContent = '● Live — Table running';
+    $('idleRow').style.display='none';
+    $('runRow').style.display='flex';
+    $('pausedRow').style.display='none';
+    $('idleNote').style.display='none';
+    rateInput.disabled=true;
+  }
+  function showPausedUI(){
+    $('statusPill').className = 'status-pill paused';
+    $('statusPill').textContent = '❚❚ Paused';
+    $('idleRow').style.display='none';
+    $('runRow').style.display='none';
+    $('pausedRow').style.display='flex';
+    $('idleNote').style.display='none';
+    rateInput.disabled=true;
+  }
+
+  $('startBtn').addEventListener('click', ()=>{
+    $('summaryCard').classList.remove('show');
+    state = 'running';
+    startTime = Date.now();
+    accumulatedMs = 0;
+    lastResumeTime = Date.now();
+    showRunUI();
+    updateDisplay();
+    tickInterval = setInterval(tick, 1000);
+    persistRunning();
+  });
+
+  $('pauseBtn').addEventListener('click', ()=>{
+    accumulatedMs += Date.now() - lastResumeTime;
+    state = 'paused';
+    clearInterval(tickInterval);
+    showPausedUI();
+    updateDisplay();
+    persistRunning();
+  });
+
+  $('resumeBtn').addEventListener('click', ()=>{
+    lastResumeTime = Date.now();
+    state = 'running';
+    showRunUI();
+    tickInterval = setInterval(tick, 1000);
+    persistRunning();
+  });
+
+  function endSession(){
+    let finalMs = accumulatedMs;
+    if(state === 'running') finalMs += Date.now() - lastResumeTime;
+    clearInterval(tickInterval);
+    const endTimeMs = Date.now();
+    const minutes = finalMs/60000;
+    const rate = getRate();
+    const amount = Math.round(minutes * rate);
+
+    const session = {
+      id: Date.now(),
+      startISO: new Date(startTime).toISOString(),
+      endISO: new Date(endTimeMs).toISOString(),
+      minutes: Math.round(minutes*10)/10,
+      rate: rate,
+      amount: amount,
+      canteenItems: [],
+      canteenTotal: 0
+    };
+    const sessions = getSessions();
+    sessions.unshift(session);
+    saveSessions(sessions);
+    lastSession = session;
+
+    state = 'idle';
+    accumulatedMs = 0; startTime = null; lastResumeTime = null;
+    localStorage.removeItem(RUNNING_KEY);
+    showIdleUI();
+    showSummary(session);
+  }
+  $('endBtn').addEventListener('click', endSession);
+  $('endBtnPaused').addEventListener('click', endSession);
+
+  // ---------- summary card ----------
+  let currentCanteenItems = [];
+
+  function showSummary(session){
+    const s = new Date(session.startISO);
+    const e = new Date(session.endISO);
+    $('sumDate').textContent = fmtDate(e);
+    $('sumStart').textContent = fmtTime(s);
+    $('sumEnd').textContent = fmtTime(e);
+    $('sumDuration').textContent = fmtDuration(session.minutes);
+    $('sumRate').textContent = `Rs ${session.rate}/min`;
+    $('sumAmount').textContent = `Rs ${session.amount}`;
+
+    currentCanteenItems = (session.canteenItems || []).map(it => ({...it}));
+    $('canteenToggle').checked = currentCanteenItems.length > 0;
+    $('canteenBody').classList.toggle('show', currentCanteenItems.length > 0);
+    renderCanteenItems();
+
+    $('splitToggle').checked = false;
+    $('splitBody').classList.remove('show');
+    $('playerCount').textContent = '2';
+
+    updateTotals();
+    $('summaryCard').classList.add('show');
+  }
+
+  function renderCanteenItems(){
+    const wrap = $('canteenItemsList');
+    wrap.innerHTML = '';
+    currentCanteenItems.forEach((item, idx)=>{
+      const row = document.createElement('div');
+      row.className = 'canteen-item-row';
+      row.innerHTML = `
+        <input type="text" class="ci-title" placeholder="e.g. Biscuit" value="${item.title.replace(/"/g,'&quot;')}">
+        <input type="number" class="ci-amount" placeholder="Rs" value="${item.amount || ''}">
+        <button class="ci-remove" title="Remove item">✕</button>`;
+      const titleInput = row.querySelector('.ci-title');
+      const amountInput = row.querySelector('.ci-amount');
+      titleInput.addEventListener('input', ()=>{
+        currentCanteenItems[idx].title = titleInput.value;
+        persistCanteen();
+      });
+      amountInput.addEventListener('input', ()=>{
+        currentCanteenItems[idx].amount = parseFloat(amountInput.value) || 0;
+        updateTotals();
+        persistCanteen();
+      });
+      row.querySelector('.ci-remove').addEventListener('click', ()=>{
+        currentCanteenItems.splice(idx,1);
+        renderCanteenItems();
+        updateTotals();
+        persistCanteen();
+      });
+      wrap.appendChild(row);
+    });
+  }
+
+  $('addCanteenItemBtn').addEventListener('click', ()=>{
+    currentCanteenItems.push({ title:'', amount:0 });
+    renderCanteenItems();
+    const rows = document.querySelectorAll('.ci-title');
+    if(rows.length) rows[rows.length-1].focus();
+    updateTotals();
+  });
+
+  $('canteenToggle').addEventListener('change', (e)=>{
+    $('canteenBody').classList.toggle('show', e.target.checked);
+    if(e.target.checked && currentCanteenItems.length === 0){
+      currentCanteenItems.push({ title:'', amount:0 });
+      renderCanteenItems();
+    }
+    if(!e.target.checked){
+      currentCanteenItems = [];
+      renderCanteenItems();
+    }
+    updateTotals();
+    persistCanteen();
+  });
+
+  function canteenTotal(){
+    return currentCanteenItems.reduce((sum,it)=> sum + (parseFloat(it.amount)||0), 0);
+  }
+
+  function updateTotals(){
+    const ct = canteenTotal();
+    $('canteenTotalAmt').textContent = `Rs ${ct}`;
+    const tableAmt = lastSession ? lastSession.amount : 0;
+    const grand = tableAmt + ct;
+    if(ct > 0){
+      $('grandTotalHero').style.display = 'block';
+      $('grandTotalAmt').textContent = `Rs ${grand}`;
+      $('grandTotalBreakdown').textContent = `Table Rs ${tableAmt} + Canteen Rs ${ct}`;
+    } else {
+      $('grandTotalHero').style.display = 'none';
+    }
+    updateSplit();
+  }
+
+  function persistCanteen(){
+    if(!lastSession) return;
+    const ct = canteenTotal();
+    lastSession.canteenItems = currentCanteenItems.map(it => ({...it}));
+    lastSession.canteenTotal = ct;
+    const sessions = getSessions().map(s => s.id === lastSession.id ? { ...s, canteenItems: lastSession.canteenItems, canteenTotal: ct } : s);
+    saveSessions(sessions);
+  }
+
+  $('splitToggle').addEventListener('change', (e)=>{
+    $('splitBody').classList.toggle('show', e.target.checked);
+    updateSplit();
+  });
+  $('playerMinus').addEventListener('click', ()=>{
+    let n = parseInt($('playerCount').textContent);
+    if(n>2) n--;
+    $('playerCount').textContent = n;
+    updateSplit();
+  });
+  $('playerPlus').addEventListener('click', ()=>{
+    let n = parseInt($('playerCount').textContent);
+    if(n<20) n++;
+    $('playerCount').textContent = n;
+    updateSplit();
+  });
+  function updateSplit(){
+    if(!lastSession) return;
+    const n = parseInt($('playerCount').textContent);
+    const grand = lastSession.amount + canteenTotal();
+    const per = Math.round(grand / n);
+    $('perPersonAmt').textContent = `Rs ${per}`;
+  }
+
+  $('newSessionBtn').addEventListener('click', ()=>{
+    $('summaryCard').classList.remove('show');
+  });
+
+  $('shareBtn').addEventListener('click', async ()=>{
+    if(!lastSession) return;
+    const s = new Date(lastSession.startISO);
+    const e = new Date(lastSession.endISO);
+    const ct = canteenTotal();
+    const grand = lastSession.amount + ct;
+    let text = `🎱 Break Time — Snooker Bill\n${fmtDate(e)}\nStart: ${fmtTime(s)}  End: ${fmtTime(e)}\nDuration: ${fmtDuration(lastSession.minutes)}\nRate: Rs ${lastSession.rate}/min\nTable: Rs ${lastSession.amount}`;
+    if(ct > 0){
+      text += `\nCanteen:`;
+      currentCanteenItems.forEach(it=>{
+        if(it.title || it.amount) text += `\n  - ${it.title || 'Item'}: Rs ${it.amount||0}`;
+      });
+      text += `\nTotal Bill: Rs ${grand}`;
+    }
+    if($('splitToggle').checked){
+      const n = parseInt($('playerCount').textContent);
+      const per = Math.round(grand/n);
+      text += `\nSplit (${n} players): Rs ${per} each`;
+    }
+    if(navigator.share){
+      try{ await navigator.share({ text }); }catch(e){}
+    } else {
+      try{
+        await navigator.clipboard.writeText(text);
+        alert('Copied to clipboard — paste it in WhatsApp!');
+      }catch(e){ alert(text); }
+    }
+  });
+
+  // ---------- confirm modal helper ----------
+  function askConfirm(message, onYes){
+    $('confirmText').textContent = message;
+    $('confirmOverlay').classList.add('show');
+    const yesBtn = $('confirmYes');
+    const noBtn = $('confirmNo');
+    function cleanup(){
+      $('confirmOverlay').classList.remove('show');
+      yesBtn.removeEventListener('click', yesHandler);
+      noBtn.removeEventListener('click', noHandler);
+    }
+    function yesHandler(){ cleanup(); onYes(); }
+    function noHandler(){ cleanup(); }
+    yesBtn.addEventListener('click', yesHandler);
+    noBtn.addEventListener('click', noHandler);
+  }
+
+  // ---------- history ----------
+  function renderHistory(){
+    const sessions = getSessions();
+    const list = $('histList');
+    list.innerHTML = '';
+    if(sessions.length === 0){
+      list.innerHTML = '<div class="hist-empty">No sessions yet.<br>Play a game and it will show up here.</div>';
+      $('weekTotal').textContent = 'Rs 0';
+      $('monthTotal').textContent = 'Rs 0';
+      return;
+    }
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7*24*60*60*1000);
+    const monthAgo = new Date(now.getTime() - 30*24*60*60*1000);
+    let weekTotal = 0, monthTotal = 0;
+
+    sessions.forEach(s=>{
+      const e = new Date(s.endISO);
+      const st = new Date(s.startISO);
+      const ct = s.canteenTotal || 0;
+      const grand = s.amount + ct;
+      if(e >= weekAgo) weekTotal += grand;
+      if(e >= monthAgo) monthTotal += grand;
+
+      const row = document.createElement('div');
+      row.className = 'hist-item';
+      const canteenLine = ct > 0 ? `<span>Table Rs ${s.amount} + Canteen Rs ${ct}</span>` : `<span>Rs ${s.rate}/min</span>`;
+      row.innerHTML = `
+        <div class="hi-left">
+          <label>${fmtDate(e)}</label>
+          <span>${fmtTime(st)} – ${fmtTime(e)} · ${fmtDuration(s.minutes)}</span>
+        </div>
+        <div class="hi-right">
+          <div class="hi-amt">
+            <strong>Rs ${grand}</strong>
+            ${canteenLine}
+          </div>
+          <button class="del-btn" data-id="${s.id}" title="Delete this session">✕</button>
+        </div>`;
+      list.appendChild(row);
+    });
+    $('weekTotal').textContent = `Rs ${weekTotal}`;
+    $('monthTotal').textContent = `Rs ${monthTotal}`;
+
+    list.querySelectorAll('.del-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = Number(btn.dataset.id);
+        askConfirm('Delete this session? This cannot be undone.', ()=>{
+          const remaining = getSessions().filter(s => s.id !== id);
+          saveSessions(remaining);
+          renderHistory();
+        });
+      });
+    });
+  }
+
+  $('clearHistBtn').addEventListener('click', ()=>{
+    askConfirm('Delete all saved session history? This cannot be undone.', ()=>{
+      localStorage.removeItem(SESSIONS_KEY);
+      renderHistory();
+    });
+  });
+
+  // ---------- init ----------
+  showIdleUI();
+  restoreRunning();
+})();
+</script>
+</body>
+</html>
